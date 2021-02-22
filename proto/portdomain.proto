@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+option go_package = ".;portgrpc";
+
+package portgrpc;
+
+service PortDomain {
+    rpc SavePort (PortList) returns (SavePortReply) {
+    }
+    rpc GetPorts (GetPortsRequest) returns (PortList) {
+    }
+}
+
+
+message GetPortsRequest {
+    int32 start = 1;
+    int32 limit = 2;
+}
+
+message Port {
+    string key = 1;
+    string name = 2;
+    string city = 3;
+    string country = 4;
+    repeated string alias = 5;
+    repeated double coordinates = 6;
+    string Province = 7;
+    string timezone = 8;
+    repeated string unlocs = 9;
+    string code = 10;
+}
+
+message PortList {
+    repeated Port ports = 1;
+}
+
+// The response message containing the greetings
+message SavePortReply {
+    bool ok = 1;
+}

@@ -1,0 +1,22 @@
+version: "3.9"
+services:
+  api :
+    build: ./portapi
+    environment:
+      SERVICE_HOST: "service"
+    ports:
+      - "8080:8080"
+  service:
+    build: ./portservice
+    environment:
+      MONGO_HOST: "db"
+    ports:
+      - "50051:50051"
+  db:
+    image: mongo:latest
+    ports:
+      - 27017:27017
+    volumes:
+      - mongodb_data_container:/data/db
+volumes:
+  mongodb_data_container:
