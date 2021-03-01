@@ -1,4 +1,4 @@
-package service
+package mongo
 
 import (
 	"context"
@@ -6,18 +6,27 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
-	"portservice/domain"
+	"portservice/internal/core/domain"
+	"portservice/pkg/env"
 	"time"
 )
-func getMongoURI() string {
-	return "mongodb://"+getEnv("MONGO_HOST", "localhost")+":27017"
+
+type repo struct {
 }
 
-func Save(ports []*domain.Port) error {
+func NewPortMongoRepo() *repo {
+	return &repo{}
+}
+
+func (r *repo) getMongoURI() string {
+	return "mongodb://" + env.GetEnv("MONGO_HOST", "localhost") + ":27017"
+}
+
+func (r *repo) Save(ports []domain.Port) error {
 	log.Printf("saving %v", len(ports))
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(getMongoURI()))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(r.getMongoURI()))
 	defer func() {
 		if err = client.Disconnect(ctx); err != nil {
 			panic(err)
@@ -37,10 +46,11 @@ func Save(ports []*domain.Port) error {
 	return nil
 }
 
-func Get(start, limit int32) ([]*domain.Port, error) {
+//start, limit int32
+func (r *repo) GetAll() ([]domain.Port, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(getMongoURI()))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(r.getMongoURI()))
 	defer func() {
 		if err = client.Disconnect(ctx); err != nil {
 			panic(err)
@@ -53,9 +63,9 @@ func Get(start, limit int32) ([]*domain.Port, error) {
 		return nil, err
 	}
 	defer cur.Close(ctx)
-	ports := make([]*domain.Port, 0)
+	ports := make([]domain.Port, 0)
 	for cur.Next(ctx) {
-		var result *domain.Port
+		var result domain.Port
 		err := cur.Decode(&result)
 		if err != nil {
 			return nil, err

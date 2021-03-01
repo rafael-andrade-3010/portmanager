@@ -1,7 +1,7 @@
 FROM golang:alpine as golang
 WORKDIR /go/src/app
 COPY . .
-RUN CGO_ENABLED=0 go build -ldflags '-extldflags "-static"' -o /go/bin/app
+RUN CGO_ENABLED=0 go build -ldflags '-extldflags "-static"' -o /go/bin/app ./cmd/grpcserver/main.go
 
 FROM alpine:latest as alpine
 RUN apk --no-cache add tzdata zip ca-certificates

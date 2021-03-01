@@ -4,7 +4,7 @@
 // 	protoc        v3.11.2
 // source: portdomain.proto
 
-package portgrpc
+package porthandler
 
 import (
 	proto "github.com/golang/protobuf/proto"

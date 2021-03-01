@@ -1,10 +1,11 @@
-package server
+package porthandler
 
 import (
 	"context"
 	"log"
 	"net"
-	pb "portservice/proto"
+	"portservice/internal/core/service/portservice"
+	"portservice/internal/repositories/portrepo/kv"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -15,8 +16,11 @@ func dialer() func(context.Context, string) (net.Conn, error) {
 	listener := bufconn.Listen(1024 * 1024)
 
 	server := grpc.NewServer()
+	repo := kv.New()
+	service := portservice.New(repo)
+	handler := NewGrpcHandler(service)
 
-	pb.RegisterPortDomainServer(server, &PortServer{})
+	RegisterPortDomainServer(server, handler)
 
 	go func() {
 		if err := server.Serve(listener); err != nil {
@@ -38,9 +42,9 @@ func TestSave(t *testing.T) {
 	}
 	defer conn.Close()
 
-	client := pb.NewPortDomainClient(conn)
+	client := NewPortDomainClient(conn)
 
-	request := &pb.PortList{Ports: []*pb.Port{{
+	request := &PortList{Ports: []*Port{{
 		Key:         "1",
 		Name:        "1",
 		City:        "1",
@@ -70,9 +74,9 @@ func TestSaveAndGet(t *testing.T) {
 	}
 	defer conn.Close()
 
-	client := pb.NewPortDomainClient(conn)
+	client := NewPortDomainClient(conn)
 
-	request := &pb.PortList{Ports: []*pb.Port{{
+	request := &PortList{Ports: []*Port{{
 		Key:         "1",
 		Name:        "1",
 		City:        "1",
@@ -91,7 +95,7 @@ func TestSaveAndGet(t *testing.T) {
 		t.Errorf("Expected %v and got %v", true, response.Ok)
 	}
 
-	ports, err := client.GetPorts(ctx, &pb.GetPortsRequest{})
+	ports, err := client.GetPorts(ctx, &GetPortsRequest{})
 	if err != nil {
 		t.Errorf("Got error %v", err)
 	}
