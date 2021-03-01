@@ -5,10 +5,14 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
+	"os"
+	"os/signal"
 	"portservice/internal/core/service/portservice"
 	"portservice/internal/handlers/porthandler"
 	"portservice/internal/repositories/portrepo/mongo"
 	"runtime"
+	"sync"
+	"syscall"
 	"time"
 )
 
@@ -50,9 +54,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	s := grpc.NewServer()
-	porthandler.RegisterPortDomainServer(s, handler)
-	if err := s.Serve(lis); err != nil {
+	grpcServer := grpc.NewServer()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		s := <-sigCh
+		log.Printf("got signal %v, attempting graceful shutdown", s)
+		grpcServer.GracefulStop()
+		wg.Done()
+	}()
+
+	porthandler.RegisterPortDomainServer(grpcServer, handler)
+	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }
